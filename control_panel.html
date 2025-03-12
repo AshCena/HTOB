@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Panel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Top Navigation Tabs -->
+    <div id="top-nav">
+        <button class="tab-button active" data-tab="terminal">🖥️ Terminal</button>
+        <button class="tab-button" data-tab="file-share">📂 File Share</button>
+        <button class="tab-button" data-tab="test-connections">🔌 Test Connections</button>
+        <button class="tab-button" data-tab="deployer">🚀 Deployer</button>
+    </div>
+
+    <!-- Content Section -->
+    <div id="content-container">
+
+        <!-- 🔹 Terminal Section (Default View) -->
+        <div class="tab-content" id="terminal">
+            <div id="terminal-container">
+                <div id="terminal-header">🖥️ Control Panel Terminal</div>
+                <div id="terminal-output"></div>
+                <input type="text" id="terminal-input" placeholder="Type your command here and press Enter...">
+            </div>
+        </div>
+
+        <!-- 🔹 File Share Section -->
+        <div class="tab-content" id="file-share" style="display: none;">
+            <div id="file-manager-container">
+
+                <!-- 🔹 File Explorer Terminal -->
+                <div id="file-terminal">
+                    <div id="file-terminal-header">📂 File Explorer Terminal</div>
+                    <div id="file-terminal-output"></div>
+                    <input type="text" id="file-terminal-input" placeholder="Type 'cd folder', 'ls', or 'mkdir newFolder'">
+                </div>
+
+                <!-- 🔹 File Manager Display -->
+                <div id="file-manager">
+                    <!-- File Upload & Actions -->
+                    <div id="file-actions">
+                        <input type="file" id="file-upload" multiple>
+                        <button onclick="uploadFiles()">⬆️ Upload</button>
+                        <button onclick="createFolder()">📁 New Folder</button>
+                    </div>
+
+                    <!-- 🔹 File & Folder Display -->
+                    <div id="file-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🔹 Test Connections Section -->
+        <div class="tab-content" id="test-connections" style="display: none;">
+            <h2>🔌 Test Connections</h2>
+            <p>Ping servers, check response times.</p>
+        </div>
+
+        <!-- 🔹 Deployer Section -->
+        <div class="tab-content" id="deployer" style="display: none;">
+            <h2>🚀 Deployer</h2>
+            <p>Deploy applications with a single click.</p>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
