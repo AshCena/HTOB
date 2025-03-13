@@ -4,9 +4,10 @@ import subprocess
 import shutil
 from typing import List
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Query, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -184,3 +185,34 @@ async def upload_file(files: List[UploadFile] = File(...)):
         with open(file_location, "wb") as buffer:
             buffer.write(await file.read())
     return {"message": "File(s) uploaded successfully"}
+
+
+@app.get("/load")
+async def load_file(file: str, dir: str = Query(default=os.getcwd())):
+    """Load the content of a file from the correct directory"""
+    file_path = os.path.join(dir, file)
+
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            return JSONResponse({"exists": True, "content": content})
+        except Exception as e:
+            return JSONResponse({"exists": False, "error": str(e)})
+
+    return JSONResponse({"exists": False, "content": ""})
+
+
+@app.post("/save")
+async def save_file(request: Request):
+    """Save the content to a file in the correct directory"""
+    data = await request.json()
+    dir_path = data.get("dir", os.getcwd())  # Get directory from request
+    file_path = os.path.join(dir_path, data["fileName"])
+
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(data["content"])
+        return JSONResponse({"status": "success"})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)

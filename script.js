@@ -38,18 +38,52 @@ document.addEventListener("DOMContentLoaded", function () {
 
     connectTerminalSocket(); // Establish terminal connection
 
-    terminalInput.addEventListener("keypress", function (event) {
-        if (event.key === "Enter") {
-            let command = terminalInput.value.trim();
-            terminalInput.value = "";
+    // terminalInput.addEventListener("keypress", function (event) {
+    //     if (event.key === "Enter") {
+    //         let command = terminalInput.value.trim();
+    //         terminalInput.value = "";
+    //
+    //         if (command) {
+    //             terminalOutput.innerHTML += `\n<span class="user-command">${currentDir} > ${command}</span>`;
+    //             scrollTerminalToBottom();
+    //             terminalSocket.send(command);
+    //         }
+    //     }
+    // });
 
-            if (command) {
-                terminalOutput.innerHTML += `\n<span class="user-command">${currentDir} > ${command}</span>`;
-                scrollTerminalToBottom();
-                terminalSocket.send(command);
-            }
-        }
-    });
+
+          terminalInput.addEventListener("keypress", function (event) {
+                if (event.key === "Enter") {
+                    let command = terminalInput.value.trim();
+                    terminalInput.value = "";
+
+                    if (command === "clear") {
+                        terminalOutput.innerHTML = ""; // Clears the terminal UI
+                        return;
+                    }
+
+                    if (command.startsWith("vi ")) {
+                        let fileName = command.split(" ")[1];
+                        if (!fileName) {
+                            terminalOutput.innerHTML += `\nError: Please provide a file name`;
+                            return;
+                        }
+                        openTextEditor(fileName);
+                        return;
+                    }
+
+                    if (command) {
+                        terminalOutput.innerHTML += `\n<span class="user-command">${currentDir} > ${command}</span>`;
+                        scrollTerminalToBottom();
+
+                        // 🚀 Only send the command if it's NOT 'clear'
+                        if (command !== "clear") {
+                            terminalSocket.send(command);
+                        }
+                    }
+                }
+            });
+
 
     function scrollTerminalToBottom() {
         setTimeout(() => {
@@ -404,3 +438,4 @@ function updateFileList(items) {
         }
     };
 });
+
