@@ -185,32 +185,30 @@ async def upload_file(files: List[UploadFile] = File(...)):
         with open(file_location, "wb") as buffer:
             buffer.write(await file.read())
     return {"message": "File(s) uploaded successfully"}
-
-
 @app.get("/load")
 async def load_file(file: str, dir: str = Query(default=os.getcwd())):
-    """Load the content of a file from the correct directory"""
+    """Load the content of a file using `cat` for accuracy."""
+    dir = os.path.abspath(dir)
     file_path = os.path.join(dir, file)
 
     if os.path.exists(file_path):
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
+            content = subprocess.run(["cat", file_path], capture_output=True, text=True).stdout  # ✅ Use `cat`
             return JSONResponse({"exists": True, "content": content})
         except Exception as e:
             return JSONResponse({"exists": False, "error": str(e)})
 
     return JSONResponse({"exists": False, "content": ""})
 
-
 @app.post("/save")
 async def save_file(request: Request):
-    """Save the content to a file in the correct directory"""
+    """Save the content to a file and create if new."""
     data = await request.json()
-    dir_path = data.get("dir", os.getcwd())  # Get directory from request
+    dir_path = os.path.abspath(data.get("dir", os.getcwd()))  # ✅ Ensure correct path
     file_path = os.path.join(dir_path, data["fileName"])
 
     try:
+        os.makedirs(dir_path, exist_ok=True)  # ✅ Ensure directory exists
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(data["content"])
         return JSONResponse({"status": "success"})

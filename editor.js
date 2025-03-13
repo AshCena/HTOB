@@ -14,46 +14,64 @@ document.addEventListener("DOMContentLoaded", function () {
     let cursorPosition = 0;
     let currentFileName = "";
     let fileContent = "";
+    let currentDir = "";
 
- function openTextEditor(fileName) {
-    currentFileName = fileName;
-    editorModal.style.display = "block";
-    const editorTextarea = document.getElementById("editor-textarea");
-    editorTextarea.focus();
-
-    // ✅ Fetch the current directory from the terminal
-    terminalSocket.send("pwd"); // Request the current working directory
-    terminalSocket.onmessage = function (event) {
-        let currentDir = event.data.trim();
-
-        // ✅ Now fetch the file from the correct directory
-        fetch(`http://localhost:8000/load?file=${encodeURIComponent(fileName)}&dir=${encodeURIComponent(currentDir)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.exists) {
-                    fileContent = data.content;
-                    editorTextarea.value = fileContent; // ✅ Display file contents
+    function getCurrentDirectory() {
+        return new Promise((resolve, reject) => {
+            let dirListener = function (event) {
+                let receivedDir = event.data.trim();
+                if (receivedDir) {
+                    terminalSocket.removeEventListener("message", dirListener);
+                    resolve(receivedDir);
                 } else {
-                    fileContent = "";
-                    editorTextarea.value = ""; // New empty file
+                    reject("Failed to fetch current directory.");
                 }
-            })
-            .catch(error => console.error("Error loading file:", error));
-    };
-}
+            };
+
+            terminalSocket.addEventListener("message", dirListener);
+            terminalSocket.send("pwd");
+        });
+    }
+
+    async function openTextEditor(fileName) {
+        currentFileName = fileName;
+        editorModal.style.display = "block";
+        const editorTextarea = document.getElementById("editor-textarea");
+        editorTextarea.focus();
+
+        try {
+            currentDir = await getCurrentDirectory(); // ✅ Correct working directory
+
+            // ✅ Fetch file contents using `cat` for accurate reading
+            let response = await fetch(`http://localhost:8000/load?file=${encodeURIComponent(fileName)}&dir=${encodeURIComponent(currentDir)}`);
+            let data = await response.json();
+
+            if (data.exists) {
+                fileContent = data.content;
+                editorTextarea.value = fileContent; // ✅ Show file contents
+            } else {
+                fileContent = "";
+                editorTextarea.value = ""; // ✅ Blank new file
+            }
+        } catch (error) {
+            console.error("Error loading file:", error);
+        }
+    }
 
     function closeTextEditor() {
         editorModal.style.display = "none";
     }
 
-    function saveFile() {
+    async function saveFile() {
         const textContent = document.getElementById("editor-textarea").value;
 
-        fetch("http://localhost:8000/save", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fileName: currentFileName, content: textContent })
-        }).then(response => {
+        try {
+            let response = await fetch("http://localhost:8000/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ fileName: currentFileName, content: textContent, dir: currentDir })
+            });
+
             if (response.ok) {
                 fileContent = textContent; // ✅ Update stored content
                 closeTextEditor();
@@ -61,7 +79,9 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
                 alert("❌ Failed to save the file.");
             }
-        }).catch(error => console.error("Save error:", error));
+        } catch (error) {
+            console.error("Save error:", error);
+        }
     }
 
     function enterCommandMode() {
@@ -101,9 +121,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (event.key === "Enter") {
                 if (commandBuffer === "q") {
-                    closeTextEditor(); // Quit without saving
+                    closeTextEditor(); // ✅ Quit without saving
                 } else if (commandBuffer === "wq") {
-                    saveFile(); // Save and quit
+                    saveFile(); // ✅ Save and quit
+                } else {
+                    document.getElementById("editor-status").innerText = "-- INVALID COMMAND --";
+                    setTimeout(() => document.getElementById("editor-status").innerText = "-- COMMAND MODE --", 1000);
                 }
                 commandBuffer = "";
                 event.preventDefault();
