@@ -37,12 +37,13 @@ document.addEventListener("DOMContentLoaded", function () {
         currentFileName = fileName;
         editorModal.style.display = "block";
         const editorTextarea = document.getElementById("editor-textarea");
+        editorTextarea.value = ""; // ✅ Ensure editor is cleared when opened
         editorTextarea.focus();
 
         try {
             currentDir = await getCurrentDirectory(); // ✅ Correct working directory
 
-            // ✅ Fetch file contents using `cat` for accurate reading
+            // ✅ Fetch file contents using `cat` for accuracy
             let response = await fetch(`http://localhost:8000/load?file=${encodeURIComponent(fileName)}&dir=${encodeURIComponent(currentDir)}`);
             let data = await response.json();
 
@@ -59,6 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function closeTextEditor() {
+        document.getElementById("editor-textarea").value = ""; // ✅ Clear editor on close
         editorModal.style.display = "none";
     }
 
